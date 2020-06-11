@@ -21,6 +21,7 @@ The fields extracted from the original data are:
 * packetsDstToSrc (only available on NSG Flow v2 captures)
 * bytesDestToSrc (only available on NSG Flow v2 captures)
 
+For more information about the fields found in the json data and extracted by this script see https://docs.microsoft.com/en-us/azure/network-watcher/network-watcher-nsg-flow-logging-overview#log-format
 
 ## How to use this script
 * Get the MAC address of the source or destination server. You'll need it in the next step
