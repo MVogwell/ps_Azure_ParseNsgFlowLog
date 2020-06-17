@@ -3,7 +3,7 @@
 param (
 	[Parameter(Mandatory=$True)][string]$InputFile,
 	[Parameter(Mandatory=$True)][string]$Outputfile,
-	[Parameter(Mandatory=$True)][switch]$AppendLog
+	[Parameter(Mandatory=$False)][switch]$AppendLog
 )
 Function psParseNsgFlowData() {
 	param (
