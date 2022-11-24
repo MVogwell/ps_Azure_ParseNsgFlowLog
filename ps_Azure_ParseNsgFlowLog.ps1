@@ -13,9 +13,6 @@ Function psParseNsgFlowData() {
 		[ref]$ReturnMsg
 	)
 
-	Write-Host "`n`nAzure NSG Flow Export parser" -ForegroundColor Green
-	Write-Host "MVogwell - 09/06/2020 - v1.0`n" -ForegroundColor Green
-
 	$bReturn = $True
 	[string]$sTimestamp = (Get-Date -Format "yyyyMMdd-HHmmss")
 
@@ -31,14 +28,12 @@ Function psParseNsgFlowData() {
 			$OutputFile = $Env:Temp + "\" + $sTimestamp + "_ParsedNSGLog_" + (Split-Path $InputFile -Leaf)
 		}
 				
-		Write-Host "Output file: $OutputFile" -ForegroundColor Yellow
-
 		$arrFlowMap = @("UnixEpoch","sourceIP","destIP","sourcePort","destPort","proto","trafficFlow","action","flowState","packetsSrcToDest","bytesSrcToDest","packetsDstToSrc","bytesDestToSrc")
 
 		$arrResults = @()
 
 		try {
-			$d = Get-Content $InputFile | convertfrom-json
+			$d = Get-Content $InputFile | ConvertFrom-Json
 		}
 		catch {
 			$ReturnMsg.Value = "Failed to open input file $InputFile"
@@ -47,11 +42,26 @@ Function psParseNsgFlowData() {
 
 		# Only proceed if the file was successfully loaded
 		if ($bReturn -eq $True) {
-			Write-Host "Input file: $InputFile" -ForegroundColor Yellow
+			Write-Information "Input file: $InputFile"
+			Write-Information "Output file: $OutputFile `n"
 		
 			$rs = $d.records
+			$iCounter = 0
+			$iTotal = $rs.count
+
 			foreach ($r in $rs) {
-				$r.properties.flows.flows.flowtuples | foreach {	# Enumerate each flowtuple
+				try {
+					$iPercent = $iCounter / $iTotal * 100
+					Write-Progress -Activity "Analysing log data" -PercentComplete $iPercent
+				}
+				catch { 
+					Write-Progress -Activity "Analysing log data"
+				}
+				finally {
+					$iCounter ++
+				}
+
+				$r.properties.flows.flows.flowtuples | ForEach-Object {	# Enumerate each flowtuple
 					$objResult = new-object PSCustomObject
 					$objResult | Add-Member -MemberType NoteProperty -Name "timestamp" -value $r.time
 					
@@ -89,23 +99,46 @@ Function psParseNsgFlowData() {
 	} # End of: Check the input file exists - else section
 
 	if ($bReturn -eq $True) {
-		Write-Host "Successfully parsed log data." -ForegroundColor Green
-		Write-Host "Results saved to $OutputFile" -ForegroundColor Green
+		Write-Information "Successfully parsed log data.`n"
+		Write-Information "Results saved to $OutputFile `n"
 	} 
 	Else {
-		Write-Host "Failed to complete successfully." -ForegroundColor Red
-		Write-Host "$($ReturnMsg.Value)" -ForegroundColor Red
+		Write-Information "Failed to complete successfully. `n"
+		Write-Information "$($ReturnMsg.Value)"
 	}
 	
 	return $bReturn
 } # End of: function
 
 
+#@# Main
+
+# Save the preference for displaying Write-Information
+$objInfoPref = $InformationPreference
+$InformationPreference = "Continue"
+
+Write-Information "`n`nAzure NSG Flow Export parser"
+Write-Information "MVogwell - 24/11/2022 - v1.1`n"
+
+# Remove quotes around the file path
+$InputFile = $InputFile.Replace("`"","")
+
 [string]$sReturnMsg = ""
 [bool]$bReturn = psParseNsgFlowData -InputFile $InputFile -OutputFile $Outputfile -Append $AppendLog -ReturnMsg ([ref]$sReturnMsg)
 
 If ($bReturn -eq $True) {
-	Start-Process "C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE" $Outputfile
+	try {
+		Write-Information "Opening results in Excel (if available)"
+
+		Start-Process EXCEL.EXE $Outputfile
+
+		Write-Output "`t+++ Success`n"
+	}
+	catch {
+		Write-Information "`t--- Failed. Please open the file $Outputfile"
+	}
 }
 
-Write-Host "`nFinished`n`n" -ForegroundColor Green
+Write-Information "Finished`n`n"
+
+$InformationPreference = $objInfoPref
