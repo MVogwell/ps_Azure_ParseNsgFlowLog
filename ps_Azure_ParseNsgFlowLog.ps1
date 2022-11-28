@@ -85,15 +85,17 @@ Function psParseNsgFlowData() {
 			try {
 				# Export the results to csv
 				if ($Append -eq $True) {
-					$arrResults | export-csv $OutputFile -NoTypeInformation -NoClobber -Delimiter "|" -Append
+					$arrResults | Export-Csv $OutputFile -NoTypeInformation -NoClobber -Delimiter "|" -Append
 				}
 				else {
-					$arrResults | export-csv $OutputFile -NoTypeInformation -Delimiter "|"
+					$arrResults | Export-Csv $OutputFile -NoTypeInformation -Delimiter "|"
 				}
 			}
 			catch {
 				$sErrMsg = "Failed to save results. Error: " + ($Error[0].Exception.Message).Replace("`n"," :: ").Replace("`r","")
 				$ReturnMsg.Value = $sErrMsg
+				
+				$bReturn = $false
 			}
 		} # End of: Only proceed if the file was successfully loaded
 	} # End of: Check the input file exists - else section
@@ -118,7 +120,7 @@ $objInfoPref = $InformationPreference
 $InformationPreference = "Continue"
 
 Write-Information "`n`nAzure NSG Flow Export parser"
-Write-Information "MVogwell - 24/11/2022 - v1.1`n"
+Write-Information "MVogwell - 24/11/2022 - v1.2`n"
 
 # Remove quotes around the file path
 $InputFile = $InputFile.Replace("`"","")
